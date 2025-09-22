@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	size_t nFrames;
-	vector<short> samples(FRAMES_BUFFER_SIZE * sndFile.channels());
+	vector<short> samples(FRAMES_BUFFER_SIZE * sndFile.channels()); // Buffer for reading frames - 16-bit samples
 	WAVHist hist { sndFile };
 	while((nFrames = sndFile.readf(samples.data(), FRAMES_BUFFER_SIZE))) {
 		samples.resize(nFrames * sndFile.channels());
