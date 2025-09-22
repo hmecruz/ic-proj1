@@ -46,31 +46,26 @@ class WAVHist {
 	}
 
 	void updateMid(const std::vector<short>& samples) {
-		size_t n { };
-		short previous_sample;
-		short computed_sample;
-		for(auto s : samples)
-			if (n++ % 2 == 0){ //Left Channel
-				previous_sample = s;
-			} 
-			else{ //Right Channel
-				computed_sample = (s + previous_sample) / 2;
-				mid_counts[computed_sample]++;
-			}
+		if (counts.size() != 2) return; // Only for stereo
+
+		for (size_t i = 0; i + 1 < samples.size(); i += 2) {
+			short L = samples[i];
+			short R = samples[i+1];
+			int mid = (static_cast<int>(L) + static_cast<int>(R)) / 2; // Prevent overflow
+			mid_counts[static_cast<short>(mid)]++;
+		}
 	}
 
 	void updateSide(const std::vector<short>& samples) {
-		size_t n { };
-		short previous_sample;
-		short computed_sample;
-		for(auto s : samples)
-			if (n++ % 2 == 0){ //Left Channel
-				previous_sample = s;
-			} 
-			else{ //Right Channel
-				computed_sample = (previous_sample - s) / 2;
-				side_counts[computed_sample]++;
-			}
+		if (counts.size() != 2) return; // Only valid for stereo
+
+		for (size_t i = 0; i + 1 < samples.size(); i += 2) {
+			short L = samples[i];
+			short R = samples[i+1];
+
+			int side = (static_cast<int>(L) - static_cast<int>(R)) / 2; // Prevent overflow
+			side_counts[static_cast<short>(side)]++;
+		}
 	}
 
 	void dump(const size_t channel) const {
