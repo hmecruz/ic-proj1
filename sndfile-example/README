@@ -6,4 +6,4 @@ To test:
 	../bin/wav_cp sample.wav copy.wav // copies "sample.wav" into "copy.wav"
 	../bin/wav_hist sample.wav 0 // outputs the histogram of channel 0 (left)
 	../bin/wav_dct sample.wav out.wav // generates a DCT "compressed" version
-
+	../bin/wav_quant -v -b 4 sample.wav q4.wav // verbose, coarse 4-bit quantization
