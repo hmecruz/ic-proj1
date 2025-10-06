@@ -33,16 +33,27 @@ class WAVHist {
 
 	std::map<short, size_t> side_counts;  // histogram for SIDE channel - only one channel
 	// side_counts[0] --> number of times SIDE channel saw sample 0 --> 15
+  
+	short quantize(short value) const {
+        // Group values into bins of width bin_size
+		// example: bin_size = 16 --> quantize(-31) = (-31 / 16) * 16 = (-1) * 16 = -16 --> rounds down
+        return static_cast<short>((value / bin_size) * bin_size);
+    }
+
 
   public:
-	WAVHist(const SndfileHandle& sfh) {
+  	size_t bin_size;
+	WAVHist(const SndfileHandle& sfh, size_t bin_size = 1) : bin_size(bin_size) {
 		counts.resize(sfh.channels());
 	}
 
 	void update(const std::vector<short>& samples) {
 		size_t n { };
 		for(auto s : samples)
-			counts[n++ % counts.size()][s]++;
+			counts[n++ % counts.size()][quantize(s)]++;
+		
+		// counts [channel][sample_value]++ --> increment the count of sample_value in channel
+		// quantize(s) --> group values into bins of width bin_size
 	}
 
 	void updateMid(const std::vector<short>& samples) {
@@ -52,7 +63,7 @@ class WAVHist {
 			short L = samples[i];
 			short R = samples[i+1];
 			int mid = (static_cast<int>(L) + static_cast<int>(R)) / 2; // Prevent overflow
-			mid_counts[static_cast<short>(mid)]++;
+			mid_counts[quantize(static_cast<short>(mid))]++;
 		}
 	}
 
@@ -64,7 +75,7 @@ class WAVHist {
 			short R = samples[i+1];
 
 			int side = (static_cast<int>(L) - static_cast<int>(R)) / 2; // Prevent overflow
-			side_counts[static_cast<short>(side)]++;
+			side_counts[quantize(static_cast<short>(side))]++;
 		}
 	}
 
