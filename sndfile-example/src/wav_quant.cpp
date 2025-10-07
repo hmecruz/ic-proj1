@@ -5,11 +5,11 @@
 
 using namespace std;
 
-constexpr size_t FRAMES_BUFFER_SIZE = 65536; // Buffer for reading/writing frames
+constexpr size_t FRAMES_BUFFER_SIZE = 65536;
 
 static inline short quantize_sample(short s, int bits) {
-    if(bits >= 16) return s; // No change
-    const int step = 1 << (16 - bits); // power-of-two step size
+    if(bits >= 16) return s;
+    const int step = 1 << (16 - bits);
     int x = static_cast<int>(s);
     // Round to nearest multiple of step (symmetric rounding around 0)
     int q = ((x + (x >= 0 ? step/2 : -step/2)) / step) * step;
