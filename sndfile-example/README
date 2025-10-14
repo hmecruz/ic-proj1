@@ -8,3 +8,9 @@ To test:
 	../bin/wav_dct sample.wav out.wav // generates a DCT "compressed" version
 	../bin/wav_quant -v -b 4 sample.wav q4.wav // verbose, coarse 4-bit quantization
 	../bin/wav_cmp -v sample.wav q4.wav // verbose, compare sample.wav with q4.wav
+
+
+To test:
+	cd sndfile-example
+	./bin/wav_hist ./test/sample.wav side 64 > ./data/hist_channel_0.txt
+	python3 test/plot_hist.py data/hist_channel_0.txt 

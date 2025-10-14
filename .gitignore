@@ -1,2 +1,5 @@
 sndfile-example/bin/*
 settings.json
+venv/
+build/
+data/

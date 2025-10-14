@@ -31,6 +31,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+	// channel 0 --> Left
+	// channel 1 --> Right
+	// channel mid --> (L+R)/2
+	// channel side --> (L-R)/2
+	// bin size --> group values into bins of width bin_size (default = 1, i.e., no grouping)
+
     // open input WAV
     SndfileHandle sndFile { argv[1] };
     if(sndFile.error()) {

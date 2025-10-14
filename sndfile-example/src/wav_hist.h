@@ -35,68 +35,72 @@ class WAVHist {
 	// side_counts[0] --> number of times SIDE channel saw sample 0 --> 15
   
 	short quantize(short value) const {
-        // Group values into bins of width bin_size
-		// example: bin_size = 16 --> quantize(-31) = (-31 / 16) * 16 = (-1) * 16 = -16 --> rounds down
-        return static_cast<short>((value / bin_size) * bin_size);
+		if (bin_size <= 1) return value;
+
+		int val = static_cast<int>(value);
+		int bin = bin_size; // ensure bin_size is int
+
+		int q = (val / bin) * bin;            // trunc toward zero result
+		if (val < 0 && (val % bin) != 0) {    // for negatives with remainder, move down one bin
+			q -= bin;
+		}
+
+		return static_cast<short>(q);
+	}
+
+
+public:
+    size_t bin_size;
+
+    WAVHist(const SndfileHandle& sfh, size_t bin_size = 1)
+        : bin_size(bin_size) {
+        counts.resize(sfh.channels());
     }
 
+    void update(const std::vector<short>& samples) {
+        size_t n{};
+        for (auto s : samples)
+            counts[n++ % counts.size()][quantize(s)]++;
+    }
 
-  public:
-  	size_t bin_size;
-	WAVHist(const SndfileHandle& sfh, size_t bin_size = 1) : bin_size(bin_size) {
-		counts.resize(sfh.channels());
-	}
+    void updateMid(const std::vector<short>& samples) {
+        if (counts.size() != 2)
+            return; // Only for stereo
 
-	void update(const std::vector<short>& samples) {
-		size_t n { };
-		for(auto s : samples)
-			counts[n++ % counts.size()][quantize(s)]++;
-		
-		// counts [channel][sample_value]++ --> increment the count of sample_value in channel
-		// quantize(s) --> group values into bins of width bin_size
-	}
+        for (size_t i = 0; i + 1 < samples.size(); i += 2) {
+            short L = samples[i];
+            short R = samples[i + 1];
+            int mid = (static_cast<int>(L) + static_cast<int>(R)) / 2;
+            mid_counts[quantize(static_cast<short>(mid))]++;
+        }
+    }
 
-	void updateMid(const std::vector<short>& samples) {
-		if (counts.size() != 2) return; // Only for stereo
+    void updateSide(const std::vector<short>& samples) {
+        if (counts.size() != 2)
+            return; // Only valid for stereo
 
-		for (size_t i = 0; i + 1 < samples.size(); i += 2) {
-			short L = samples[i];
-			short R = samples[i+1];
-			int mid = (static_cast<int>(L) + static_cast<int>(R)) / 2; // Prevent overflow
-			mid_counts[quantize(static_cast<short>(mid))]++;
-		}
-	}
+        for (size_t i = 0; i + 1 < samples.size(); i += 2) {
+            short L = samples[i];
+            short R = samples[i + 1];
+            int side = (static_cast<int>(L) - static_cast<int>(R)) / 2;
+            side_counts[quantize(static_cast<short>(side))]++;
+        }
+    }
 
-	void updateSide(const std::vector<short>& samples) {
-		if (counts.size() != 2) return; // Only valid for stereo
+    void dump(const size_t channel) const {
+        for (auto [value, counter] : counts[channel])
+            std::cout << value << '\t' << counter << '\n';
+    }
 
-		for (size_t i = 0; i + 1 < samples.size(); i += 2) {
-			short L = samples[i];
-			short R = samples[i+1];
+    void dumpMid() const {
+        for (auto [value, counter] : mid_counts)
+            std::cout << value << '\t' << counter << '\n';
+    }
 
-			int side = (static_cast<int>(L) - static_cast<int>(R)) / 2; // Prevent overflow
-			side_counts[quantize(static_cast<short>(side))]++;
-		}
-	}
-
-	void dump(const size_t channel) const {
-		for(auto [value, counter] : counts[channel])
-			std::cout << value << '\t' << counter << '\n';
-	}
-
-	void dumpMid() const {
-		for(auto [value, counter] : mid_counts)
-			std::cout << value << '\t' << counter << '\n';
-	}
-
-	void dumpSide() const {
-		for(auto [value, counter] : side_counts)
-			std::cout << value << '\t' << counter << '\n';
-	}
-
-
-
+    void dumpSide() const {
+        for (auto [value, counter] : side_counts)
+            std::cout << value << '\t' << counter << '\n';
+    }
 };
 
 #endif
-
