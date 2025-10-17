@@ -11,6 +11,8 @@ SET (CMAKE_CXX_FLAGS_DEBUG "-g3 -fsanitize=address")
 SET (BASE_DIR ${CMAKE_SOURCE_DIR} )
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BASE_DIR}/../bin)
 
+add_subdirectory(${BASE_DIR}/../../bit_stream/src ${CMAKE_BINARY_DIR}/bit_stream_build)
+
 add_executable (wav_cp wav_cp.cpp)
 target_link_libraries (wav_cp sndfile)
 
@@ -28,3 +30,11 @@ target_link_libraries (wav_cmp sndfile)
 
 add_executable (wav_effects wav_effects.cpp)
 target_link_libraries (wav_effects sndfile)
+
+add_executable (wav_quant_enc wav_quant_enc.cpp)
+target_include_directories(wav_quant_enc PRIVATE ../../bit_stream/src)
+target_link_libraries (wav_quant_enc bit_stream sndfile)
+
+add_executable (wav_quant_dec wav_quant_dec.cpp)
+target_include_directories(wav_quant_dec PRIVATE ../../bit_stream_src)
+target_link_libraries(wav_quant_dec bit_stream sndfile) 
