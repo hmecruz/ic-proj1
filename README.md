@@ -8,14 +8,18 @@ It includes tools to copy, compare, compress, quantize, generate histograms, and
 
 ### Main Executables
 
-| Executable    | Description                                                     |
-| ------------- | --------------------------------------------------------------- |
-| `wav_cp`      | Copies a WAV file                                               |
-| `wav_cmp`     | Compares two WAV files                                          |
-| `wav_dct`     | Applies DCT-based compression                                   |
-| `wav_quant`   | Performs audio quantization (encoding/decoding)                 |
-| `wav_hist`    | Generates and saves histograms for audio channels               |
-| `wav_effects` | Applies audio effects (echo, multiple echoes, tremolo, vibrato) |
+| Executable      | Description                                                     |
+| --------------- | --------------------------------------------------------------- |
+| `wav_cp`        | Copies a WAV file                                               |
+| `wav_cmp`       | Compares two WAV files                                          |
+| `wav_dct`       | Applies DCT-based compression                                   |
+| `wav_quant`     | Performs audio quantization (encoding/decoding)                 |
+| `wav_hist`      | Generates and saves histograms for audio channels               |
+| `wav_effects`   | Applies audio effects (echo, multiple echoes, tremolo, vibrato) |
+| `wav_quant_enc` |                                                                 |
+| `wav_quant_dec` |                                                                 |
+| `dct_enc`       | Lossy encoder for mono WAV; writes compact .dct (BitStream)     |
+| `dct_dec`       | Decoder for .dct; reconstructes mono WAV                        |
 
 ---
 
@@ -73,13 +77,31 @@ Optional flags such as `-v` (verbose) can be used to display detailed comparison
 
 ### 🔹 wav_dct
 
-TO BE COMPLETED
+Applies block DCT per channel and keeps only a fraction of low-frequency coefficients, reconstructing a lossy WAV.
+
+Usage:
+
+```bash
+../bin/wav_dct [ -v ] [ -bs blockSize ] [ -frac dctFraction ] <input.wav> <output.wav>
+```
+
+Works with mono or stereo PCM_16 WAV.
+It outputs a WAV with high-frequency content reduced. File size remains similar to the input.
 
 ---
 
 ### 🔹 wav_quant
 
-TO BE COMPLETED
+Uniformly quantizes PCM samples to a target bit depth and writes a new WAV (container stays 16‑bit PCM).
+
+Usage:
+
+```bash
+../bin/wav_quant [ -v ] -b <bits:1..16> <input.wav> <output.wav>
+```
+
+Input must be WAV PCM_16; output remains PCM_16 but amplitudes are snapped to 2^bits levels.
+Assess distortion with `../bin/wav_cmp sample.wav q8.wav`.
 
 ---
 
@@ -130,6 +152,33 @@ TO BE COMPLETED
 ### 🔹 wav_quant_dec
 
 TO BE COMPLETED
+
+---
+
+### 🔹 dct_enc
+
+Lossy encoder for mono WAV based on block DCT + quantization. Writes a compact `.dct` bitstream using BitStream.
+
+Usage:
+
+```bash
+../bin/dct_enc [ -v ] [ -bs N ] [ -k K ] [ -b bits ] [ -q step ] <input_mono.wav> <output.dct>
+```
+
+Input must be mono PCM_16 WAV. Use `wav_to_mono` to downmix.
+Tune quality/size: increase `-k` (keep more DCT coeffs) and/or decrease `-q` (finer quantization) for higher quality; ensure `-b` is large enough to avoid coefficient clipping (e.g., 14–16).
+
+---
+
+### 🔹 dct_dec
+
+Decoder for `.dct` files produced by `dct_enc`. Reconstructs a mono PCM_16 WAV via inverse DCT.
+
+Usage:
+
+```bash
+../bin/dct_dec [ -v ] <input.dct> <output.wav>
+```
 
 ---
 
