@@ -36,5 +36,16 @@ target_include_directories(wav_quant_enc PRIVATE ../../bit_stream/src)
 target_link_libraries (wav_quant_enc bit_stream sndfile)
 
 add_executable (wav_quant_dec wav_quant_dec.cpp)
-target_include_directories(wav_quant_dec PRIVATE ../../bit_stream_src)
+target_include_directories(wav_quant_dec PRIVATE ../../bit_stream/src)
 target_link_libraries(wav_quant_dec bit_stream sndfile) 
+
+add_executable (dct_enc dct_enc.cpp)
+target_include_directories(dct_enc PRIVATE ../../bit_stream/src)
+target_link_libraries(dct_enc bit_stream sndfile fftw3)
+
+add_executable (dct_dec dct_dec.cpp)
+target_include_directories(dct_dec PRIVATE ../../bit_stream/src)
+target_link_libraries(dct_dec bit_stream sndfile fftw3)
+
+add_executable (wav_to_mono wav_to_mono.cpp)
+target_link_libraries (wav_to_mono sndfile)
