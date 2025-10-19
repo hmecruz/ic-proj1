@@ -126,20 +126,27 @@ This allows you to analyze amplitude distributions and compare how bin size affe
 
 ### 🔹 wav_effects
 
-Applies various audio effects such as echo, multiple echoes, amplitude modulation (tremolo), and vibrato (time-varying delay).
+This program applies various audio effects such as echo, multiple echoes, amplitude modulation (tremolo), and vibrato (time-varying delay).
+It can also compute and save histograms of the audio signal **before and after** applying the effect, allowing for a visual and analytical comparison of how each transformation changes the amplitude distribution.
 
-```bash
-../bin/wav_effects <effect> <input-file.wav> <output-file.wav> [parameters...]
-```
+The general usage format is:
+
+`../bin/wav_effects <effect> <input-file.wav> <output-file.wav> [parameters...] [bin_size]`
 
 Where:
 
-* `<effect>`: `echo`, `multiecho`, `tremolo`, or `vib`
-* `<input-file.wav>`: source audio file
-* `<output-file.wav>`: resulting file with the effect applied
-* `[parameters...]`: effect-specific parameters such as delay, decay, modulation frequency, or depth
+* `<effect>` — one of the supported effects: `echo`, `multiecho`, `tremolo`, or `vib`
+* `<input-file.wav>` — path to the source audio file
+* `<output-file.wav>` — path for saving the processed audio file
+* `[parameters...]` — effect-specific parameters such as delay, decay, modulation frequency, or depth
+* `[bin_size]` *(optional)* — number of bins to use when generating histograms (default is 64 if not specified)
 
-Each effect processes the input audio signal to create unique auditory transformations.
+After execution, two histogram text files are automatically generated in the output directory:
+
+* `<effect>_hist_before.txt` — histogram data of the input signal before the effect
+* `<effect>_hist_after.txt` — histogram data of the processed signal after the effect
+
+These histogram files can be visualized using the provided Python plotting script to better understand how the effect influences the signal’s distribution.
 
 ---
 
