@@ -101,7 +101,6 @@ Usage:
 ```
 
 Input must be WAV PCM_16; output remains PCM_16 but amplitudes are snapped to 2^bits levels.
-Assess distortion with `../bin/wav_cmp sample.wav q8.wav`.
 
 ---
 
