@@ -1,4 +1,3 @@
-// Simple converter: any-channel PCM16 WAV -> mono by averaging channels
 #include <sndfile.hh>
 #include <vector>
 #include <iostream>

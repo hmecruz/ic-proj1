@@ -1,7 +1,3 @@
-//------------------------------------------------------------------------------
-// DCT-based lossy encoder for mono PCM16 WAV
-// Block DCT, uniform quantization of first K coefficients, BitStream output
-//------------------------------------------------------------------------------
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -16,17 +12,14 @@
 using namespace std;
 
 static inline uint32_t to_u32(int32_t v, int bits){
-    // two's complement packing into 'bits' LSBs
     uint32_t mask = (bits >= 32) ? 0xFFFFFFFFu : ((1u << bits) - 1u);
     return static_cast<uint32_t>(v) & mask;
 }
 
 static inline int32_t from_u32(uint32_t u, int bits){
-    // not used here (decoder side) but kept for symmetry
     if(bits == 32) return static_cast<int32_t>(u);
     uint32_t sign = 1u << (bits-1);
     if(u & sign){
-        // negative number
         int32_t val = static_cast<int32_t>(u | (~((1u<<bits)-1u)));
         return val;
     } else {
@@ -99,17 +92,15 @@ int main(int argc, char* argv[]){
     size_t nBlocks = (nFrames + blockSize - 1) / blockSize;
     vector<double> x(blockSize, 0.0);
 
-    // DCT plans (in-place)
     fftw_plan planD = fftw_plan_r2r_1d(static_cast<int>(blockSize), x.data(), x.data(), FFTW_REDFT10, FFTW_ESTIMATE);
 
-    // Open bitstream for writing
     fstream fs(outBin, ios::binary | ios::out | ios::trunc);
     if(!fs){ cerr << "Error: cannot open output file" << endl; return 1; }
     BitStream bs(fs, STREAM_WRITE);
 
     // Header
     bs.write_string("DCT1");
-    write_u16(bs, 1); // version
+    write_u16(bs, 1);
     write_u32(bs, static_cast<uint32_t>(sfIn.samplerate()));
     write_u32(bs, static_cast<uint32_t>(nFrames));
     write_u16(bs, static_cast<uint16_t>(blockSize));
@@ -125,7 +116,6 @@ int main(int argc, char* argv[]){
 
     // Process blocks
     for(size_t b=0; b<nBlocks; ++b){
-        // load block with zero-padding
         size_t start = b * blockSize;
         size_t len = std::min(blockSize, nFrames - start);
         for(size_t i=0;i<blockSize;i++){
@@ -135,12 +125,10 @@ int main(int argc, char* argv[]){
 
         // DCT-II
         fftw_execute(planD);
-        // Scale as in wav_dct: coefficients are divided by 2N
         double scale = 1.0 / (static_cast<double>(blockSize) * 2.0);
         for(size_t k=0;k<keepK;k++){
             double ck = x[k] * scale;
             int32_t q = static_cast<int32_t>( llround( ck / static_cast<double>(qStep) ) );
-            // pack as unsigned bits two's complement
             uint32_t uq = to_u32(q, coeffBits);
             bs.write_n_bits(uq, coeffBits);
         }

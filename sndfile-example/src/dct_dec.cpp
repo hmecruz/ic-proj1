@@ -1,7 +1,3 @@
-//------------------------------------------------------------------------------
-// DCT-based lossy decoder for mono PCM16 WAV
-// Reads BitStream produced by dct_enc, dequantizes first K coeffs, inverse DCT
-//------------------------------------------------------------------------------
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -90,18 +86,14 @@ int main(int argc, char* argv[]){
     fftw_plan planI = fftw_plan_r2r_1d(blockSize, x.data(), x.data(), FFTW_REDFT01, FFTW_ESTIMATE);
 
     for(size_t b=0;b<nBlocks;++b){
-        // read K quantized coeffs
         for(size_t k=0;k<blockSize;k++) x[k]=0.0;
         for(size_t k=0;k<keepK;k++){
             uint32_t uq = static_cast<uint32_t>(bs.read_n_bits(coeffBits));
             int32_t q = sign_extend(uq, coeffBits);
-            // Encoder quantized coefficients after dividing by (2N), i.e., ck = X[k]/(2N)
-            // REDFT01 in our setup expects these scaled coefficients directly
             double ck = static_cast<double>(q) * static_cast<double>(qStep);
             x[k] = ck;
         }
         fftw_execute(planI);
-        // round and clamp
         for(size_t i=0;i<blockSize;i++){
             long v = lround(x[i]);
             if(v>32767) v=32767;
@@ -110,7 +102,7 @@ int main(int argc, char* argv[]){
         }
     }
 
-    // Write WAV (trim to totalFrames)
+    // Write WAV
     SndfileHandle sfOut{outWav, SFM_WRITE, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 1, static_cast<int>(samplerate)};
     if(sfOut.error()){ cerr << "Error: cannot open output wav" << endl; return 1; }
     sfOut.writef(out.data(), totalFrames);
