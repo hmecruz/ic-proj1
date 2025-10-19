@@ -101,6 +101,11 @@ public:
         for (auto [value, counter] : side_counts)
             std::cout << value << '\t' << counter << '\n';
     }
+
+    const std::map<short, size_t>& getChannelCounts(size_t ch) const {
+        return counts[ch];
+    }
+
 };
 
 #endif

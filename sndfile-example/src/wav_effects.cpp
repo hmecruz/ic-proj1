@@ -2,7 +2,9 @@
 #include <vector>
 #include <cmath>
 #include <string>
+#include <fstream>
 #include <sndfile.hh>
+#include "wav_hist.h"
 
 using namespace std;
 
@@ -77,12 +79,14 @@ void applyTimeVaryingDelay(vector<short>& samples, int channels, int samplerate,
 //------------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
     if(argc < 4) {
-        cerr << "Usage: " << argv[0] << " <effect> <input.wav> <output.wav> [params...]\n";
+        cerr << "Usage: " << argv[0] << " <effect> <input.wav> <output.wav> [params...] [bin_size]\n";
         cerr << "Effects:\n"
              << "  echo <delay_sec> <decay>\n"
              << "  multiecho <delay_sec> <decay> <repeats>\n"
              << "  tremolo <freq_Hz> <depth>\n"
              << "  vib <max_delay_sec> <freq_Hz>\n";
+        cerr << "Optional:\n"
+             << "  bin_size (default = 1)\n";
         return 1;
     }
 
@@ -90,19 +94,16 @@ int main(int argc, char* argv[]) {
     string inputFile = argv[2];
     string outputFile = argv[3];
 
+    // open input
     SndfileHandle sndFileIn { inputFile };
     if(sndFileIn.error()) {
         cerr << "Error: cannot open input file\n";
         return 1;
     }
 
-    if((sndFileIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV) {
-        cerr << "Error: input is not a WAV file\n";
-        return 1;
-    }
-
-    if((sndFileIn.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
-        cerr << "Error: input must be PCM_16 format\n";
+    if((sndFileIn.format() & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV ||
+       (sndFileIn.format() & SF_FORMAT_SUBMASK) != SF_FORMAT_PCM_16) {
+        cerr << "Error: input must be 16-bit PCM WAV\n";
         return 1;
     }
 
@@ -113,7 +114,39 @@ int main(int argc, char* argv[]) {
     vector<short> samples(nFrames * channels);
     sndFileIn.readf(samples.data(), nFrames);
 
-    // Apply effect
+    // Determine bin size (last argument if numeric)
+    size_t bin_size = 1;
+    if(argc > 4) {
+        try {
+            bin_size = static_cast<size_t>(stoi(argv[argc - 1]));
+            if(bin_size < 1) bin_size = 1;
+        } catch(...) {
+            bin_size = 1;
+        }
+    }
+
+    // Construct base path for histogram output
+    string basePath = outputFile;
+    size_t dotPos = basePath.find_last_of('.');
+    if(dotPos != string::npos)
+        basePath = basePath.substr(0, dotPos);
+
+    // ---- HISTOGRAM BEFORE EFFECT ----
+    WAVHist histBefore(sndFileIn, bin_size);
+    histBefore.update(samples);
+
+    string fileBefore = basePath + "_hist_before_" + effect + ".txt";
+    {
+        ofstream out(fileBefore);
+        if(!out) {
+            cerr << "Error: cannot write histogram before file\n";
+        } else {
+            for(const auto& [value, count] : histBefore.getChannelCounts(0))
+                out << value << '\t' << count << '\n';
+        }
+    }
+
+    // ---- APPLY EFFECT ----
     if(effect == "echo" && argc >= 6) {
         double delay = atof(argv[4]);
         double decay = atof(argv[5]);
@@ -140,14 +173,28 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SndfileHandle sndFileOut { outputFile, SFM_WRITE, sndFileIn.format(), channels, samplerate };
-    if(sndFileOut.error()) {
-        cerr << "Error: cannot create output file\n";
-        return 1;
+    // ---- HISTOGRAM AFTER EFFECT ----
+    WAVHist histAfter(sndFileIn, bin_size);
+    histAfter.update(samples);
+
+    string fileAfter = basePath + "_hist_after_" + effect + ".txt";
+    {
+        ofstream out(fileAfter);
+        if(!out) {
+            cerr << "Error: cannot write histogram after file\n";
+        } else {
+            for(const auto& [value, count] : histAfter.getChannelCounts(0))
+                out << value << '\t' << count << '\n';
+        }
     }
 
+    // ---- SAVE OUTPUT ----
+    SndfileHandle sndFileOut { outputFile, SFM_WRITE, sndFileIn.format(), channels, samplerate };
     sndFileOut.writef(samples.data(), nFrames);
 
     cout << "Effect '" << effect << "' applied successfully!\n";
+    cout << "Histograms written:\n  " << fileBefore << "\n  " << fileAfter << "\n";
+    cout << "Using bin size = " << bin_size << " (only channel 0)\n";
+
     return 0;
 }
