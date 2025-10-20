@@ -16,8 +16,8 @@ It includes tools to copy, compare, compress, quantize, generate histograms, and
 | `wav_quant`     | Performs audio quantization (encoding/decoding)                 |
 | `wav_hist`      | Generates and saves histograms for audio channels               |
 | `wav_effects`   | Applies audio effects (echo, multiple echoes, tremolo, vibrato) |
-| `wav_quant_enc` |                                                                 |
-| `wav_quant_dec` |                                                                 |
+| `wav_quant_enc` | Encodes results of audio quantization into qnt files (BitStream)|
+| `wav_quant_dec` | Decodes qnt files into playable WAV files                       |
 | `dct_enc`       | Lossy encoder for mono WAV; writes compact .dct (BitStream)     |
 | `dct_dec`       | Decoder for .dct; reconstructes mono WAV                        |
 
@@ -151,13 +151,30 @@ These histogram files can be visualized using the provided Python plotting scrip
 
 ### 🔹 wav_quant_enc
 
-TO BE COMPLETED
+Uniformly quantizes PCM samples to a target bit depth and writes a new QNT file.
+
+Usage:
+
+```bash
+../bin/wav_quant_enc -b <bits:1..16> <input.wav> <output.qnt>
+```
+
+Input must be WAV PCM_16; output is an own QNT format with amplitudes snapped to 2^bits levels.
 
 ---
 
 ### 🔹 wav_quant_dec
 
-TO BE COMPLETED
+
+Recreates a playable PCM_16 WAV file out of a quantized QNT file.
+
+Usage:
+
+```bash
+../bin/wav_quant_dec <input.qnt> <output.wav>
+```
+
+Input must be QNT format; output is a playable PCM_16 WAV file.
 
 ---
 
